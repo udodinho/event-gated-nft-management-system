@@ -14,7 +14,6 @@ contract EventSystem {
         string description;
         uint256 duration;
         uint256 dateCreated;
-        bool isRegistered;
     }
 
     struct Users {
@@ -52,21 +51,10 @@ contract EventSystem {
         evnt.duration = _duration;
         evnt.dateCreated = date;
 
-        evntCount += 1;
+        eventCount += 1;
 
         events[msg.sender].push(evnt);
         
-        // Event memory evnt = Event({
-        //     id: _id,
-        //     name: _name,
-        //     description: _description,
-        //     duration: _duration * 1 days,
-        //     dateCreated: date,
-        //     registeredUsers:            
-        // });
-        
-        // events[msg.sender].push(evnt);
-        // events[msg.sender][_id].push(evnt);
         emit EventCreatedSuccessfully(_id, _name);
 
     }
@@ -76,22 +64,14 @@ contract EventSystem {
 
         Event storage evnt = eventCreated[_id];
         require(evnt.id != 0, "invalid event id");
-        require(!evnt.isRegistered, "already registered for event");
+        require(!hasRegistered[msg.sender], "already registered for event");
 
         uint256 _duration = evnt.dateCreated + evnt.duration;
         require(block.timestamp < _duration, "Event registration ended");
 
         users[msg.sender] = Users( _name, _email);
         hasRegistered[msg.sender] = true;
-        evnt.isRegistered = true;
 
-        // Users memory user = Users({
-        //     name: _name,
-        //     email: _email,
-        //     isRegistered: true
-        // });
-
-        // users[msg.sender].push(user);
         emit UserRegistrationSuccessful(_name, _email);
     }
 
