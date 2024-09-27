@@ -1,10 +1,10 @@
-// SPDX-License-Identifier: SEE LICENSE IN LICENSE
+// // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.24;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-
-contract EventSystem {
+contract EventSystem is Ownable {
     address public nftContractAddress;
     uint256 public eventCount;
 
@@ -14,6 +14,7 @@ contract EventSystem {
         string description;
         uint256 duration;
         uint256 dateCreated;
+        bool isCanceled;
     }
 
     struct Users {
@@ -21,26 +22,24 @@ contract EventSystem {
         string email;
     }
 
-    // mapping (uint256 id => mapping (address => bool)) registeredUsers;
+    mapping (uint256 => mapping (address => bool)) registeredUsers;
     mapping (uint256 => Event) eventCreated;
-    mapping (address => Event[]) events;
-    mapping (address => bool) hasRegistered;
-    mapping (address => Users) users;
+    mapping (string => address) nameToAddress;
+    mapping (string => address) emailToAddress;
+    mapping (address => Users) user;
 
     event EventCreatedSuccessfully(uint256 indexed id, string indexed name);
-    event UserRegistrationSuccessful(string indexed name, string indexed email);
+    event UserRegistrationSuccessful(uint256 indexed id, string indexed name, string indexed email);
 
-    constructor(address _nftContractAddress) {
+    constructor(address _nftContractAddress) Ownable(msg.sender) {
         nftContractAddress = _nftContractAddress;
     } 
 
     function createEvent(uint256 _duration, string memory _name, string memory _description) external {
         require(msg.sender != address(0), "Address zero detected");
+        require(eventCount < 10, "Maximum event created");
 
-        IERC721 _nftContract = IERC721(nftContractAddress);
-        require(_nftContract.balanceOf(msg.sender) > 0, "You must own an NFT to proceed");
-
-        uint256 _id = eventCount++;
+        uint256 _id = eventCount + 1;
         uint256 date = block.timestamp;
 
         Event storage evnt = eventCreated[_id];
@@ -48,32 +47,33 @@ contract EventSystem {
         evnt.id = _id;
         evnt.name = _name;
         evnt.description = _description;
-        evnt.duration = _duration;
+        evnt.duration = _duration * 1 days;
         evnt.dateCreated = date;
 
         eventCount += 1;
 
-        events[msg.sender].push(evnt);
-        
         emit EventCreatedSuccessfully(_id, _name);
-
     }
 
     function registerForEvent(uint256 _id, string memory _name, string memory _email) external {
         require(msg.sender != address(0), "Address zero detected");
 
-        Event storage evnt = eventCreated[_id];
-        require(evnt.id != 0, "invalid event id");
-        require(!hasRegistered[msg.sender], "already registered for event");
+        IERC721 _nftContract = IERC721(nftContractAddress);
+        require(_nftContract.balanceOf(msg.sender) > 0, "You must own an NFT to register");
 
+        Event storage evnt = eventCreated[_id];
+        require(evnt.id != 0, "Invalid event ID");
+        
+require(!registeredUsers[_id][msg.sender], "Already registered for the event");
         uint256 _duration = evnt.dateCreated + evnt.duration;
         require(block.timestamp < _duration, "Event registration ended");
 
-        users[msg.sender] = Users( _name, _email);
-        hasRegistered[msg.sender] = true;
+        user[msg.sender] = Users(_name, _email);
+        nameToAddress[_name] = msg.sender;
+        emailToAddress[_email] = msg.sender;
 
-        emit UserRegistrationSuccessful(_name, _email);
+        registeredUsers[_id][msg.sender] = true;
+
+        emit UserRegistrationSuccessful(_id, _name, _email);
     }
-
-    
 }
