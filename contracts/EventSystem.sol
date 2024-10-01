@@ -64,7 +64,7 @@ contract EventSystem is Ownable {
         Event storage evnt = eventCreated[_id];
         require(evnt.id != 0, "Invalid event ID");
         
-require(!registeredUsers[_id][msg.sender], "Already registered for the event");
+        require(!registeredUsers[_id][msg.sender], "Already registered for the event");
         uint256 _duration = evnt.dateCreated + evnt.duration;
         require(block.timestamp < _duration, "Event registration ended");
 
@@ -75,5 +75,13 @@ require(!registeredUsers[_id][msg.sender], "Already registered for the event");
         registeredUsers[_id][msg.sender] = true;
 
         emit UserRegistrationSuccessful(_id, _name, _email);
+    }
+
+    function getRegisteredUserByName(string memory _name) external view onlyOwner returns (Users memory) {
+        address userAddress = nameToAddress[_name];
+        require(userAddress != address(0), "User not found with the given name");
+
+        Users memory usr = user[userAddress];
+        return usr;
     }
 }
