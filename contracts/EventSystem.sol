@@ -84,4 +84,12 @@ contract EventSystem is Ownable {
         Users memory usr = user[userAddress];
         return usr;
     }
+
+    function getRegisteredUserByEmail(string memory _email) external view onlyOwner returns (Users memory) {
+        address userAddress = emailToAddress[_email];
+        require(userAddress != address(0), "User not found with the given email");
+
+        Users memory usr = user[userAddress];
+        return usr;
+    }
 }
