@@ -92,4 +92,13 @@ contract EventSystem is Ownable {
         Users memory usr = user[userAddress];
         return usr;
     }
+
+    function cancelEvent(uint256 _id) external onlyOwner {
+        require(msg.sender != address(0), "Address zero detected");
+
+        Event storage evnt = eventCreated[_id];
+        require(evnt.id != 0, "Invalid event ID");
+
+        evnt.isCanceled = !evnt.isCanceled;
+    }
 }
